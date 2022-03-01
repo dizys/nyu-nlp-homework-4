@@ -89,8 +89,17 @@ def read_articles(file_path: Path, match_id: bool = False) -> List[str]:
             if int(data_item['I']) != i + 1:
                 print(
                     f'Error: I value {data_item["I"]} does not match index {i}')
+    result: List[str] = []
 
-    return [data_item['W'] for data_item in data_list]
+    for data_item in data_list:
+        item = ''
+        if 'T' in data_item:
+            item += data_item['T']
+            item += ' '
+        item += data_item['W']
+        result.append(item)
+
+    return result
 
 
 def tokenize_article(article: str) -> List[str]:

@@ -37,6 +37,7 @@ jobs:
           cp README.txt zz2960_README_HW4.txt
           cp src/main.py main_zz2960_HW4.py
           zip -r zz2960-HW4_${TAG}.zip zz2960_README_HW4.txt main_zz2960_HW4.py output.txt requirements.txt
+          rm -f zz2960_README_HW4.txt main_zz2960_HW4.py
 
       - name: Release
         uses: softprops/action-gh-release@v1
