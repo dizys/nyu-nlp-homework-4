@@ -1,5 +1,6 @@
 NYU NLP Homework 4: Implement an ad hoc information retrieval system
     using TF-IDF weights and cosine similarity scores.
+    Improved with word stemming and stop words removal.
     by Ziyang Zeng (zz2960)
     Spring 2022
 

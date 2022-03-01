@@ -77,13 +77,19 @@ def parse_data_file(file_path: Path) -> List[Dict[str, str]]:
     return data
 
 
-def read_articles(file_path: Path) -> List[str]:
+def read_articles(file_path: Path, match_id: bool = False) -> List[str]:
     """
     Reads the articles from the file at the given path.
     :param file_path: The path to the file containing the articles.
     :return: A list of the articles.
     """
     data_list = parse_data_file(file_path)
+    if match_id:
+        for i, data_item in enumerate(data_list):
+            if int(data_item['I']) != i + 1:
+                print(
+                    f'Error: I value {data_item["I"]} does not match index {i}')
+
     return [data_item['W'] for data_item in data_list]
 
 
@@ -122,6 +128,8 @@ def vectorize_article(article: str, total_article_len: int, df_dict: Dict[str, i
 
 
 def compute_cosine_similarity(v1: np.array, v2: np.array) -> float:
+    if not v1.any() or not v2.any():
+        return 0
     return np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
 
 
@@ -134,31 +142,30 @@ def main():
         "-o", dest="outputfile", help="path for storing output file, default is output.txt", default="output.txt")
     args = parser.parse_args()
 
-    articles = read_articles(args.articlefile)
+    articles = read_articles(args.articlefile, match_id=True)
     total_article_len = len(articles)
     queries = read_articles(args.queryfile)
 
     df_dict = get_df_dict(articles)
 
-    result: List[Tuple[int, int, float]] = []
-
-    query_index = 0
-    for query in progress_bar(queries):
-        query_index += 1
-        query = vectorize_article(query, total_article_len, df_dict)
-        article_index = 0
-        for article in articles:
-            article_index += 1
-            article = vectorize_article(
-                article, total_article_len, df_dict, query['tokens'])
-            cosine_similarity = compute_cosine_similarity(
-                query['vector'], article['vector'])
-            if cosine_similarity > 0:
-                result.append((query_index, article_index, cosine_similarity))
-
     with open(args.outputfile, 'w') as f:
-        for query_index, article_index, cosine_similarity in result:
-            f.write(f'{query_index} {article_index} {cosine_similarity}\n')
+        query_index = 0
+        for query in progress_bar(queries):
+            query_index += 1
+            query = vectorize_article(query, total_article_len, df_dict)
+            article_index = 0
+            query_result: List[Tuple[int, float]] = []
+            for article in articles:
+                article_index += 1
+                article = vectorize_article(
+                    article, total_article_len, df_dict, query['tokens'])
+                cosine_similarity = compute_cosine_similarity(
+                    query['vector'], article['vector'])
+                if cosine_similarity > 0:
+                    query_result.append((article_index, cosine_similarity))
+            query_result.sort(key=lambda x: x[1], reverse=True)
+            for result in query_result:
+                f.write(f'{query_index} {result[0]} {result[1]}\n')
 
     print(f'Done. Output -> {args.outputfile}')
 
